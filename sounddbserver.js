@@ -13,12 +13,14 @@ const fs = require('fs');
 var zip = require('express-zip');
 //------------------------------------------
 
+let verbose=false;
+
 const app = express();
 
 portnum=process.argv[2] || 3000;
 
 app.use(express.static('PSOUNDSET'),function (req, res, next) {
-  console.log('Request Type:', req.url)
+  if (verbose){console.log('Request Type:', req.url)}
   next()
 });
 
@@ -64,7 +66,7 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	app.get('/', (req, res) => {
 		db.collection('pSoundSets').find().toArray()
 	    .then(results => {
-	      console.log("psets to return through res.render: " + JSON.stringify(results))
+	      if (verbose){console.log("psets to return through res.render: " + JSON.stringify(results))}
 	      res.render('index.ejs', { pSoundSets: results, dbmodder : dbmodder })
 	    })
 	    .catch(/* ... */)
@@ -73,7 +75,7 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 
 	// The <form> uses the POST method and sends '/pSoundSets' as the action attribute 
     app.post('/pSoundSets', (req, res) => {
-    	console.log("adding new pset : " + req.body)
+    	if (verbose){console.log("adding new pset : " + req.body)}
 	  // the req.body is the complete JSON object parsed from the <form>
 	  	pSoundSetsCollection.insertOne(req.body)
 	    .then(result => {
@@ -84,7 +86,7 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 
 	// Replace an existing document with another (used for updateing entire document)
 	app.post('/replace', (req, res) => {
-		console.log("Replacing " + req.body._id);
+		if (verbose){console.log("Replacing " + req.body._id);}
 
 		req.body=prepareID(req.body);
 		
@@ -102,7 +104,7 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	//----------------------------------------------------------------------------
 	// SEARCH
 	app.post('/search', (req, res) => {
-		console.log("Server Searching " + req.body);
+		if (verbose){console.log("Server Searching " + req.body)};
 
 		req.body=prepareID(req.body);
 		
@@ -117,14 +119,14 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 //---------------------------------------------------------------------------------
 	// Retireive a singe record
 	app.put('/one', (req, res) => {
-		console.log(req.body._id);
+		if (verbose){console.log(req.body._id)};
 
 		req.body=prepareID(req.body);
 		
 		//db.collection('pSoundSets').findOne({"_id": new ObjectId(req.body._id)})
 		pSoundSetsCollection.findOne(req.body)
 			.then(result => {
-			      console.log("OK, send result: " + result);
+			      if (verbose){console.log("OK, send result: " + result)};
 			      res.send(result);
 		    })
 	    	.catch(error => console.error(error)) 
@@ -155,19 +157,19 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 */
 	app.get('/zip', (req, res) => {
 		let sid = req.query.sid;
-		console.log("in soundfile request, sid = " + sid)
+		if (verbose){console.log("in soundfile request, sid = " + sid)}
 		let qobj={"_id":  new ObjectId(sid)}
 
 		//pSoundSetsCollection.findOne(req.body)
 		pSoundSetsCollection.findOne(qobj)
 			.then(result => {
-				console.log("OK, send result: " + result);
+				if (verbose){console.log("OK, send result: " + result)};
 				readdir('PSOUNDSET/'+result.name+"/"+result.name+"_16k")
 			    .then(dirs =>{
 			      	dirs.forEach(function (item, index, arr){
 			      		arr[index] = {path : 'PSOUNDSET/'+result.name+"/"+result.name+"_16k/" + item, name: result.name+"_16k/"+item}
 			      	});
-			      	console.log("Here is what we will zip " + dirs)
+			      	if (verbose){console.log("Here is what we will zip " + dirs)}
 			     	res.zip(dirs, result.name+"_16k"+".zip");
 		    })
 	    	.catch(error => {
@@ -184,13 +186,13 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	// Return: a page rendered with the sound list
 	app.get('/soundfiles', (req, res) => {
 		let sid = req.query.sid;
-		console.log("in soundfile request, sid = " + sid)
+		if (verbose){console.log("in soundfile request, sid = " + sid)}
 		let qobj={"_id":  new ObjectId(sid)}
 
 		//pSoundSetsCollection.findOne(req.body)
 		pSoundSetsCollection.findOne(qobj)
 			.then(result => {
-			      console.log("OK, found the record for soundfile request: " + result.name);
+			      if (verbose){console.log("OK, found the record for soundfile request: " + result.name)};
 			      //console.log("__dirname is " + __dirname)
 			      let myPath=result.name+"/"+result.name+"_16k/";
 			      readdir('PSOUNDSET/'+result.name+"/"+result.name+"_16k")
