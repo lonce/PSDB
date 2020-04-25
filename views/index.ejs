@@ -1,0 +1,170 @@
+<!-- index.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PSoundSet</title>
+
+    <script> // want to use this variable in main.js, too....
+      let dbmodder=false
+      <% if(dbmodder) {%> 
+        dbmodder=true;
+        <% } %>    
+    </script>
+
+
+    <script defer src="appscripts//main.js"></script>
+
+    <!-- for conext menu -->
+    <link rel="stylesheet" href="/css/contextual.css">
+    <link rel="stylesheet" href="/css/contextual.theme.css">
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="/appscripts/contextual.js"></script>
+    
+
+  </head>
+
+  <body>
+    <% if(dbmodder) {%>
+      <h1>Parameterized Sound Set (admin)</h1>
+    <% } else { %>
+      <h1>Parameterized Sound Set database</h1>
+    <% } %>
+    <div style="background-color:lightsteelblue;padding:15px; border: 1px solid #FF0000;" >
+
+    <div>
+      <input id="searchButt" type="button" value="SEARCH">
+      <span style="float:right;"">
+        <% if(dbmodder) {%>
+          <label  for="currentIDElement">current Sound ID</label>
+          <input id="currentIDElement" type="text" readonly value="" style="width:14em">
+        <% }else {%>
+          <input hidden id="currentIDElement" type="text" readonly value="" style="width:14em">
+        <% } %>
+
+        <% if(dbmodder) {%>
+          <input id="replaceButt" type="button"  value="UPDATE CURRENT">
+        <% }%>
+      </span>
+    </div>
+
+    <form id="soundForm" action="/pSoundSets" method="POST">
+      <!-- name attribute is NECESSARY and used for attribute name when submitting object to server -->
+      <hr>
+      <!-- buttons are not 'name'ed so that they are not added to the form sent to the db -->
+      <% if(dbmodder) {%>
+        <button type="submit"   value="SUBMIT NEW">SUBMIT NEW</button>
+      <% }%>
+
+      <hr>
+      <label for="name">Name</label>
+      <input id="name" type="text" placeholder="name" name="name" /><br>
+
+      <label for="keywords">Keywords</label>
+      <input id="keywords" type="text" placeholder="keywords" name="keywords" /> (for searching, keywords and description are 'OR' combined)<br>
+
+      <label for="description">Description</label>
+      <textarea form="soundForm" id="description" type="textarea" placeholder="description"  name="description" style="width:100%;margin:5; height:4em"></textarea><br>
+
+      <label for="notes">Notes</label>
+      <textarea form="soundForm" id="notes" type="textarea" placeholder="notes"  name="notes" style="width:60%;margin:5; height:2em"></textarea>(not indexed for text searches)<br>
+      <br>
+
+      <label for="submittedBy">Submitted By: </label>
+      <input type="text" id="submittedBy" name="submittedBy">
+
+      <label for="creationDate">Creation Date</label>
+      <input type="date" id="creationDate" name="creationDate"><br>
+
+      <label for="sourceType">SourceType</label>
+      <select id="sourceType" name="sourceType">
+        <option></option>
+        <option value="recorded">Recorded</option>
+        <option value="synthetic">Synthetic</option>
+      </select> 
+
+
+      <label for="paramType">paramType per file</label>
+      <select id="paramType" name="paramType">
+        <option ></option>
+        <option value="dynamic">constant</option>
+        <option value="constant">dynamic</option>
+      </select> <br>
+
+      <label for="numFiles">Number of Files:</label>
+      <input type=number id="numFiles" name="numFiles" style="width:5em;">
+
+      <label for="numParams">Number of params:</label>
+      <input type=number id="numParams" name="numParams" style="width:2em;"><br>
+
+
+      <br>
+
+       <fieldset>
+        <legend>Synthesized:</legend>
+        <label for="synthName">Synth Name:</label>
+        <input type="text" id="synthName" name="synthName">
+        <label for="synthLink">Synth Link</label>
+        <input type="url"  id="synthLink" name="synthLink"><br>
+        <label for="modelName">Model Name:</label>
+        <input type="text" id="modelName" name="modelName">
+        
+        <label for="synthPlatform">Synth Platform:</label>
+        <input type="text" id="synthPlatform" name="synthPlatform"><br>
+        
+      </fieldset>
+
+      <fieldset>
+        <legend>File:</legend>
+        <label for="format">Format:</label>
+          <select id="format" name="format">
+            <option ></option>
+            <option value="wav">wav</option>
+            <option value="aiff">aiff</option>
+            <option value="ogg">ogg</option>
+          </select> 
+
+        <label for="channels">Channels:</label>
+        <input type=number id="channels" name="channels" style="width:3em;"><br>
+
+        <label for="sr">Sample Rate:</label>
+        <input type=number id="sr" name="sr" style="width:7em;">
+
+        <label for="bitDepth">Bit Depth:</label>
+        <input type=number id="bitDepth" name="bitDepth" style="width:4em;"><br>
+
+        <label for="durationType">Duration Type:</label>
+          <select id="durationType" name="durationType">
+            <option ></option>
+            <option value="uniform">uniform</option>
+            <option value="various">various</option>
+          </select> 
+        <label for="lengthSecs">Length (secs):</label>
+        <input type=number id="lengthSecs" name="lengthSecs"  style="width:4em;"><br>
+
+      </fieldset>
+
+      
+    </form>
+    <button id="defaultValsButt" >Set Form Default Values</button>
+    <button id="clearValsButt" >Clear Form</button><br>
+
+   </div>
+
+    <h2> SoundSet List </h2>
+    (right-click for options: view metadata, play sounds, download)
+    <ul id="PSoundSetList">
+      <!-- Loop through PSoundSetList -->
+      <% for(var i = 0; i < pSoundSets.length; i++) {%>
+        <li class="psets" style="list-style-type:none">
+          <!-- the id is the sound_id, which we use to getElementByEd, but as a data-user attribute for passing that info to context-menue and to the database -->
+          <input value="<%= pSoundSets[i].name %>" id="<%= pSoundSets[i]._id %>"   class="soundNameButt" type="text"  /> 
+          <span>  <%=  pSoundSets[i].keywords %></span>  
+          <!-- Output description from the iterated pSoundSets object -->
+          <!-- <span>(descritpion) <%= pSoundSets[i].description %></span> ; -->
+
+        </li> 
+      <% } %>
+    </ul>
+  </body>
+</html>

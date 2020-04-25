@@ -1,0 +1,5 @@
+logs
+*.log
+PSOUNDSET/
+node_modules/
+Paper/

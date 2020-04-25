@@ -1,0 +1,40 @@
+<!-- index.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PSoundSet</title>
+
+
+    <!-- for conext menu -->
+    <link rel="stylesheet" href="/css/contextual.css">
+    <link rel="stylesheet" href="/css/contextual.theme.css">
+    <script src="/appscripts/contextual.js"></script>
+
+    <script>
+      let retreiveZippedSSet = function(sid){
+        window.open(encodeURI('/zip?sid='+sid), '_blank');
+      };
+    </script>
+
+  </head>
+
+  <body>
+    <h2> Sound Set:  <%= ssname %> </h2>
+    (_id: <%= sid %>) 
+    <input type="button" value="zip set and download" onclick="retreiveZippedSSet('<%= sid %>')" >
+    <div style="background-color:lightsteelblue;padding:15px; border: 1px solid #FF0000;" >
+
+    <ul >
+      <!-- Loop through PSoundSetList -->
+      <% for(var i = 0; i < sflist.length; i++) {%>
+        <li >
+          <span > <%= sflist[i] %></span> 
+          <audio  controls> <source src= <%= path %><%= sflist[i] %>> 
+    </audio> 
+        </li> 
+      <% } %>
+    </ul>
+    
+  </body>
+</html>
