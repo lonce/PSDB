@@ -27,22 +27,22 @@ app.use(express.static('PSOUNDSET'),function (req, res, next) {
   if (verbose){console.log('Request Type:', req.url)}
   next()
 });
-
+ 
 // This is where we will store main.js
 app.use(express.static('public'))
 let dbmodder=false; // will use to render capabilities for db admin (modify db) vs user (search db)
 
 if (portnum==55555){
-	app.listen(portnum, 'localhost', function(){
-		console.log("server listening on port " + portnum)
-	});
+	//app.listen(portnum, 'localhost', function(){
+	//	console.log("server listening on port " + portnum)
+	//});
 	dbmodder=true;
-} else{
+} //else{
 	app.listen(portnum, function(){
 		console.log("server listening on port " + portnum)
 	});
 
-}
+//}
 
 // Make sure you place body-parser before your CRUD handlers!
 // Extract data from the <form> element and add them to the body property in the request object.
