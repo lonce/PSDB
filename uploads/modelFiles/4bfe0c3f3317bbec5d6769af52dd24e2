@@ -1,0 +1,65 @@
+/* 
+This model is a "texture" with shaker events every .5 seconds,
+and nuObjects in the shaker is the control parameter. The individual colisions
+in each shake are randomly distributed in time and decay in number after each shake event.
+*/
+
+// =======================================================
+// parameter control from external process sent in through Open Sound Control (OSC)
+// =======================================================
+OscIn oin;
+OscMsg msg;
+7777 => oin.port; // must set port before adding address
+/* Mapping osc "/param1" to Shaker model parameter numbObjects */
+oin.addAddress( "/param1, f" ); // osc address and type indicator
+//----------------------------------------
+
+// Use Shaker model from STK collection
+Shakers shak => Gain g => dac;
+
+1 => float numbObjects;
+numbObjects => shak.objects;
+
+// Select a few Shaker parameters that will remain constant
+27 => shak.preset;
+.95 => shak.decay;   // [0,1] [short,infinite]
+.9 => float energy;
+
+.95 => g.gain;
+
+0.0 => float t;   // keep track of time
+.5 => float ioi;  // event inter onset interval
+
+fun void oscListener(){
+    while (true) {
+        oin => now;  // waits for event then updates now
+        while ( oin.recv(msg) != 0 ) {
+            // getFloat fetches the expected float (as indicated by "f")
+            mapPow( msg.getFloat(0), 0.0, 1.0, 0, 20) => numbObjects;
+            // Print incoming parameter values to chuck console
+           <<< "------got (via OSC):", numbObjects >>>;
+           numbObjects => shak.objects;
+        }
+    }
+}
+
+// Start the OSC event listener
+spork ~ oscListener();
+
+            
+while (true) {
+    energy => shak.energy;  // New shake event every ioi seconds
+    ioi :: second => now;
+    t+ioi => t;
+}
+
+// Utilities =====================================================
+fun float map(float x, float a, float b, float m, float n)
+{
+    return m+(n-m)*((x-a)/(b-a));
+}
+
+fun float mapPow(float x, float a, float b, float m, float n)
+{
+    return m+(n-m)*(Math.pow(2.0,(x-a)/(b-a))-1);
+}

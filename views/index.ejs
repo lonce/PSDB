@@ -33,22 +33,22 @@
     <div style="background-color:lightsteelblue;padding:15px; border: 1px solid #FF0000;" >
 
     <div>
-      <input id="searchButt" type="button" value="SEARCH">
+      <input id="searchButt" type="button" value="SEARCH" >
       <span style="float:right;"">
         <% if(dbmodder) {%>
           <label  for="currentIDElement">current Sound ID</label>
-          <input id="currentIDElement" type="text" readonly value="" style="width:14em">
+          <input id="currentIDElement" type="text" readonly value="" class="readonly" style="width:14em">
         <% }else {%>
-          <input hidden id="currentIDElement" type="text" readonly value="" style="width:14em">
+          <input hidden id="currentIDElement" type="text" readonly value="" class="readonly" style="width:14em">
         <% } %>
 
         <% if(dbmodder) {%>
-          <input id="replaceButt" type="button"  value="UPDATE CURRENT">
+          <input id="replaceButt" type="button"  value="UPDATE CURRENT" >
         <% }%>
       </span>
     </div>
 
-    <form id="soundForm" action="/pSoundSets" method="POST">
+    <form id="soundForm" action="/pSoundSets" method="POST" enctype="multipart/form-data">
       <!-- name attribute is NECESSARY and used for attribute name when submitting object to server -->
       <hr>
       <!-- buttons are not 'name'ed so that they are not added to the form sent to the db -->
@@ -58,26 +58,26 @@
 
       <hr>
       <label for="name">Name</label>
-      <input id="name" type="text" placeholder="name" name="name" /><br>
+      <input id="name" type="text" placeholder="name" name="name" class="searchable" ><br>
 
       <label for="keywords">Keywords</label>
-      <input id="keywords" type="text" placeholder="keywords" name="keywords" /> (for searching, keywords and description are 'OR' combined)<br>
+      <input id="keywords" type="text" placeholder="keywords" name="keywords" class="searchable" > <span class="info"> (for searching, keywords and description are 'OR' combined)</span><br>
 
       <label for="description">Description</label>
-      <textarea form="soundForm" id="description" type="textarea" placeholder="description"  name="description" style="width:100%;margin:5; height:4em"></textarea><br>
+      <textarea form="soundForm" id="description" type="textarea" placeholder="description"  name="description" class="searchable" style="width:100%;margin:5; height:4em"></textarea><br>
 
       <label for="notes">Notes</label>
-      <textarea form="soundForm" id="notes" type="textarea" placeholder="notes"  name="notes" style="width:60%;margin:5; height:2em"></textarea>(not indexed for text searches)<br>
+      <textarea form="soundForm" id="notes" type="textarea" placeholder="notes"  name="notes" style="width:60%;margin:5; height:4em"></textarea><span class="info">(not indexed for text searches)</span><br>
       <br>
 
       <label for="submittedBy">Submitted By: </label>
-      <input type="text" id="submittedBy" name="submittedBy">
+      <input type="text" id="submittedBy" name="submittedBy" class="searchable">
 
       <label for="creationDate">Creation Date</label>
-      <input type="date" id="creationDate" name="creationDate"><br>
+      <input type="date" id="creationDate" name="creationDate" class="searchable"><br>
 
       <label for="sourceType">SourceType</label>
-      <select id="sourceType" name="sourceType">
+      <select id="sourceType" name="sourceType" class="searchable">
         <option></option>
         <option value="recorded">Recorded</option>
         <option value="synthetic">Synthetic</option>
@@ -85,17 +85,18 @@
 
 
       <label for="paramType">paramType per file</label>
-      <select id="paramType" name="paramType">
+      <select id="paramType" name="paramType" class="searchable">
         <option ></option>
         <option value="dynamic">constant</option>
         <option value="constant">dynamic</option>
+        <option value="on/off only">on/off only</option>
       </select> <br>
 
       <label for="numFiles">Number of Files:</label>
-      <input type=number id="numFiles" name="numFiles" style="width:5em;">
+      <input type=number id="numFiles" name="numFiles" class="searchable" style="width:5em;">
 
-      <label for="numParams">Number of params:</label>
-      <input type=number id="numParams" name="numParams" style="width:2em;"><br>
+      <label for="numParams">Number of params (incl. on/off):</label>
+      <input type=number id="numParams" name="numParams" class="searchable" min="0" style="width:2em;"><br>
 
 
       <br>
@@ -103,21 +104,33 @@
        <fieldset>
         <legend>Synthesized:</legend>
         <label for="synthName">Synth Name:</label>
-        <input type="text" id="synthName" name="synthName">
+        <input type="text" id="synthName" name="synthName" class="searchable">
         <label for="synthLink">Synth Link</label>
-        <input type="url"  id="synthLink" name="synthLink"><br>
+        <input type="url"  id="synthLink" name="synthLink" class="searchable"><br>
         <label for="modelName">Model Name:</label>
-        <input type="text" id="modelName" name="modelName">
+        <input type="text" id="modelName" name="modelName" class="searchable">
         
         <label for="synthPlatform">Synth Platform:</label>
-        <input type="text" id="synthPlatform" name="synthPlatform"><br>
+        <input type="text" id="synthPlatform" name="synthPlatform" class="searchable"><br>
+        
+        <label for="modelFile">Model File:</label>
+        <% if(dbmodder) {%>
+          <input type="file" id="modelFile" name="modelFile" value='' >
+          <input id="modelFileName" name="modelFileName" type="text" value="" style="width:12em">
+        <%} else {%>
+          <input id="modelFileName" name="modelFileName" type="text" value="" readonly class="readonly" style="width:12em">
+        <%}%>
+
+
+        <input id="modelFileButt" name="modelFileButt" type="button" value="Download" style="width:7em">
+        
         
       </fieldset>
 
       <fieldset>
         <legend>File:</legend>
         <label for="format">Format:</label>
-          <select id="format" name="format">
+          <select id="format" name="format" class="searchable">
             <option ></option>
             <option value="wav">wav</option>
             <option value="aiff">aiff</option>
@@ -125,16 +138,16 @@
           </select> 
 
         <label for="channels">Channels:</label>
-        <input type=number id="channels" name="channels" style="width:3em;"><br>
+        <input type=number id="channels" name="channels" class="searchable" style="width:3em;"><br>
 
         <label for="sr">Sample Rate:</label>
-        <input type=number id="sr" name="sr" style="width:7em;">
+        <input type=number id="sr" name="sr" class="searchable" style="width:7em;">
 
         <label for="bitDepth">Bit Depth:</label>
-        <input type=number id="bitDepth" name="bitDepth" style="width:4em;"><br>
+        <input type=number id="bitDepth" name="bitDepth" class="searchable" style="width:4em;"><br>
 
-        <label for="durationType">Duration Type:</label>
-          <select id="durationType" name="durationType">
+        <label for="durationType">File Durations:</label>
+          <select id="durationType" name="durationType" class="searchable">
             <option ></option>
             <option value="uniform">uniform</option>
             <option value="various">various</option>
@@ -158,7 +171,7 @@
       <% for(var i = 0; i < pSoundSets.length; i++) {%>
         <li class="psets" style="list-style-type:none">
           <!-- the id is the sound_id, which we use to getElementByEd, but as a data-user attribute for passing that info to context-menue and to the database -->
-          <input value="<%= pSoundSets[i].name %>" id="<%= pSoundSets[i]._id %>"   class="soundNameButt" type="text"  /> 
+          <input value="<%= pSoundSets[i].name %>" id="<%= pSoundSets[i]._id %>"   class="soundNameButt" type="text"  > 
           <span>  <%=  pSoundSets[i].keywords %></span>  
           <!-- Output description from the iterated pSoundSets object -->
           <!-- <span>(descritpion) <%= pSoundSets[i].description %></span> ; -->

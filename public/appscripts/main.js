@@ -1,5 +1,9 @@
 // main.js
 
+document.getElementById("modelFile").addEventListener("change", function(ev){
+	document.getElementById("modelFileName").value=ev.target.files[0].name;
+})
+
 // Fills form from object dictionary where keys corresposnd to form input element ids
 let fillForm=function(obj, id=""){
 	document.getElementById("soundForm").reset(); 
@@ -25,7 +29,7 @@ let retreiveRecord = function(sid){
 				//body: JSON.stringify({"name": "jor"})
 			}
 			).then ((response)=>{
-				console.log("fetch returned " + response)
+				console.log("fetch returned " + JSON.stringify(response));
 				resolve ( response.json());
 			})
 	})
@@ -48,6 +52,7 @@ let deleteRecord = function(sid){
 		fetch('/one', {
 				method: 'DELETE',
 				headers: { 'Content-Type': 'application/json' },
+				// send id only for deleting
 				body: JSON.stringify({"_id": sid})
 				//body: JSON.stringify({"name": "jor"})
 			}
@@ -121,6 +126,19 @@ for(let i=0;i<getSoundDataButt.length;i++){
 	getSoundDataButt[i].addEventListener('contextmenu', soundButtonAction);
 }
 
+document.getElementById("modelFileButt").addEventListener("click", function(){
+	let sid=document.getElementById("currentIDElement").value
+	//window.open(encodeURI('/modelFile?sid='+sid), '_blank');
+	window.open('/modelFile?sid='+sid);
+	/*
+	 fetch('/modelFile/'+document.getElementById("currentIDElement").value, {
+      method: 'get',
+      headers: {'Content-Type': 'application/json'},
+    }).then(results => {
+    	console.log("so downloading?")
+    })
+    */
+})
 // *******************************************************************************
 //                         Set default values for form
 //********************************************************************************
@@ -163,8 +181,10 @@ document.getElementById("clearValsButt").addEventListener("click", function(){
 //	This is a MANUAL FORM SUBMIT because we need to add the -_id attribute that 
 //      we aren't storing in the form
 //********************************************************************************
-const formToJSON = elements => [].reduce.call(elements, (data, element) => {
-  if (element.name) {data[element.name] = element.value;}
+const form2JSON = elements => [].reduce.call(elements, (data, element) => {
+	if (element.name) {
+		data[element.name] = element.value;
+	}
   return data;
 }, {});
 
@@ -175,8 +195,16 @@ if (dbmodder){
 
 	replaceButt.addEventListener('click', function(){
 		let f=document.getElementById("soundForm")
-		let data=formToJSON(f.elements);
-	    data._id=document.getElementById("currentIDElement").value;
+		
+
+		//let data=form2JSON(f.elements);
+
+		let data = new FormData(document.getElementById("soundForm"))
+
+	    //data._id=document.getElementById("currentIDElement").value;
+	    // FormData is a special object with its very own append function for adding attributes
+	    data.append("_id", document.getElementById("currentIDElement").value)
+	    console.log("..........data.id = " + data._id)
 	    if (data._id===""){
 	    	confirm("cannot update with out valid id")
 	    	return;
@@ -185,20 +213,24 @@ if (dbmodder){
 	    console.log("replacement document: " + JSON.stringify(data))
 
 		replaceRecord(data).then((retval) => {
-						    		alert(retval);
+						    		alert(JSON.stringify(retval));
 						    		document.getElementById("soundForm").reset();
+						    		console.log("replaced, no reload from db");
 						    		window.location.reload() // gets the modified list from theserver. Could be more efficient......
 						  		});
 	})
 }
 
 let replaceRecord = function(obj){
+	console.log("sending replacement : " + JSON.stringify(obj));
 	return new Promise(function(resolve, reject) { 
 		fetch('/replace', {
 				method: 'post',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(obj)
-				//body: JSON.stringify({"name": "jor"})
+				//headers: { 'Content-Type': 'application/json' },
+				enctype: "multipart/form-data", // because we might have a file
+				//body: JSON.stringify(obj)
+				//data: obj
+				body: obj
 			}
 			).then ((response)=>{
 				console.log("replace  returned " + response)
@@ -233,21 +265,23 @@ searchButt = document.getElementById("searchButt");
 searchButt.addEventListener('click', function(){
 
 	// First remove the list of sounds that were on the page already
-	let myUL = document.getElementById("PSoundSetList");
+	let myUL = document.getElementById("PSoundSetList");   // current list of sounds listed underneath the form
 	for(let i=0;i<getSoundDataButt.length;i++){
 			getSoundDataButt[i].removeEventListener('contextmenu', soundButtonAction); // just to be a good citizen
 		}
-	myUL.innerHTML="";
+	myUL.innerHTML="";  // clear the list before repopulating with what we get from the database search
 
 	let f=document.getElementById("soundForm")
-	let searchObj=formToJSON(f.elements);
+	let searchObj=form2JSON(f.elements);
 
+	// now remove empty items that we don't want to include in the search
 	searchObj=form2SearchObj(searchObj);
 	searchDB(searchObj)
 
 	.then(data=>{
 		console.log("search  returned " + JSON.stringify(data))
 		
+		// Create html for list of sounds, each with a button and the list of keywords
 		data.forEach((item)=>{
 			let li=document.createElement('li');
 			let b=document.createElement('input');
