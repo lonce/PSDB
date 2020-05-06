@@ -1,8 +1,9 @@
 // main.js
-
-document.getElementById("modelFile").addEventListener("change", function(ev){
-	document.getElementById("modelFileName").value=ev.target.files[0].name;
-})
+if (dbmodder){
+	document.getElementById("modelFile").addEventListener("change", function(ev){
+		document.getElementById("modelFileName").value=ev.target.files[0].name;
+	})
+}
 
 // Fills form from object dictionary where keys corresposnd to form input element ids
 let fillForm=function(obj, id=""){
