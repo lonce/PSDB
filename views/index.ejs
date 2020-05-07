@@ -18,13 +18,15 @@
     <!-- for conext menu -->
     <link rel="stylesheet" href="/css/contextual.css">
     <link rel="stylesheet" href="/css/contextual.theme.css">
-    <link rel="stylesheet" href="/css/main.css">
-    <script src="/appscripts/contextual.js"></script>
+    <script src="/appscripts/contextual_lwmod.js"></script>
+    <link defer rel="stylesheet" href="/css/main.css">
+    
     
 
   </head>
 
   <body>
+
     <% if(dbmodder) {%>
       <h1>Parameterized Sound Set (admin)</h1>
     <% } else { %>
@@ -128,7 +130,12 @@
       </fieldset>
 
       <fieldset>
-        <legend>File:</legend>
+        <legend>Files:</legend>
+        <% if(dbmodder) {%>
+          <label for="soundFiles">Sound Files:</label>
+          <input type="file" id="soundFiles" name="soundFiles"  value='' multiple >
+          <input id="soundFilesName" name="soundFilesName" type="text" value="" style="width:12em"><br>
+        <%}%>
         <label for="format">Format:</label>
           <select id="format" name="format" class="searchable">
             <option ></option>

@@ -3,6 +3,11 @@ if (dbmodder){
 	document.getElementById("modelFile").addEventListener("change", function(ev){
 		document.getElementById("modelFileName").value=ev.target.files[0].name;
 	})
+
+	document.getElementById("soundFiles").addEventListener("change", function(ev){
+		document.getElementById("soundFilesName").value=ev.target.files[0].name;
+	})
+
 }
 
 // Fills form from object dictionary where keys corresposnd to form input element ids
@@ -37,8 +42,8 @@ let retreiveRecord = function(sid){
 };
 
 // The server side will only zip in an apt.get, so have to send a URL request, not a fetch
-let retreiveZippedSSet = function(sid){
-	window.open(encodeURI('/zip?sid='+sid), '_blank');
+let retreiveZippedSSet = function(sid, sr=16000){
+	window.open(encodeURI('/zip?sid='+sid+'&sr='+sr), '_blank');
 };
 
 // I don't know how to do this with a fetch
@@ -106,9 +111,19 @@ let soundButtonAction=function(ev){
 		  		});
 				}/* short-cut could go here */},
 			{type: 'seperator'}, //---------------------
-            {label: 'Download Zipped', onClick: () => {
-            	retreiveZippedSSet(sid)
-			}},
+			/*
+			{type: 'submenu', label: 'Sub menu', items: [
+                        {label: 'Subitem 1', onClick: () => {}},
+                        {label: 'Subitem 2', onClick: () => {}},
+                        {label: 'Subitem 3', onClick: () => {}},
+                    ]},
+                    */
+            {type: 'seperator'}, //---------------------     
+			{type: 'hovermenu', label: 'Download Zipped', items: [
+                        {label: '44100 sr', onClick: () => {retreiveZippedSSet(sid, 44100)}},
+                        {label: '22050 sr', onClick: () => {retreiveZippedSSet(sid, 22050)}},
+                        {label: '16000 sr', onClick: () => {retreiveZippedSSet(sid, 16000)}},
+                    ]},
 
 			{type: 'seperator'}, //---------------------
             {label: 'Show Soundfiles (new tab)', onClick: () => {
@@ -120,6 +135,9 @@ let soundButtonAction=function(ev){
             delMenuElmt
         ]
     });
+
+
+
 }
 
 // Add listeners to all the buttons for the sounds loaded when the db site is first visited
@@ -196,6 +214,19 @@ if (dbmodder){
 
 	replaceButt.addEventListener('click', function(){
 		let f=document.getElementById("soundForm")
+
+		let currentID=document.getElementById("currentIDElement").value;
+		if (currentID==""){
+			alert("Cant replace a sound with no ID. Pay attention.");
+			return;
+		}
+
+		// Basic sanity check
+		if (document.getElementById("name").value==""){
+			if (! confirm("Update sound with no name? Really?")){
+				return;
+			}
+		}
 		
 
 		//let data=form2JSON(f.elements);
@@ -204,7 +235,7 @@ if (dbmodder){
 
 	    //data._id=document.getElementById("currentIDElement").value;
 	    // FormData is a special object with its very own append function for adding attributes
-	    data.append("_id", document.getElementById("currentIDElement").value)
+	    data.append("_id", currentID)
 	    console.log("..........data.id = " + data._id)
 	    if (data._id===""){
 	    	confirm("cannot update with out valid id")

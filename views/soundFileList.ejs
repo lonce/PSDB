@@ -22,7 +22,10 @@
   <body>
     <h2> Sound Set:  <%= ssname %> </h2>
     (_id: <%= sid %>) 
-    <input type="button" value="zip set and download" onclick="retreiveZippedSSet('<%= sid %>')" >
+    <input type="button" value="zip and download 44100 sr" onclick="retreiveZippedSSet('<%= sid %>', 44100)" >
+    <input type="button" value="zip set and download 22050 sr" onclick="retreiveZippedSSet('<%= sid %>', 22050)" >
+    <input type="button" value="zip set and download 16000 sr" onclick="retreiveZippedSSet('<%= sid %>', 16000)" >
+
     <div style="background-color:lightsteelblue;padding:15px; border: 1px solid #FF0000;" >
 
     <ul >
@@ -30,7 +33,7 @@
       <% for(var i = 0; i < sflist.length; i++) {%>
         <li >
           <span > <%= sflist[i] %></span> 
-          <audio  controls> <source src= <%= path %><%= sflist[i] %>> 
+          <audio  controls> <source src= <%= path %>/<%= sflist[i] %>> 
     </audio> 
         </li> 
       <% } %>

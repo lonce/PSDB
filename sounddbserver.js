@@ -4,7 +4,37 @@ const bodyParser= require('body-parser')
 //--------------------------------------------------
 // for modelFile uploads
 const multer = require('multer');
-const upload = multer({dest: 'uploads/modelFiles/'})
+
+sfsetdir='PSOUNDSET';  // storage location for sound files 
+
+const fileStorage= multer.diskStorage({
+    destination: (req, file, cb) => {
+    	if (file.fieldname === "modelFile") { // if uploading resume
+	      cb(null, './uploads/modelFiles/');
+	    } else { // else uploading soundFiles
+	    	console.log(" creating sound file directory named " + req.body.name.replace(/ /g, '')+ '-' + myDate());
+
+	      	let newdir=sfsetdir +'/'+req.body.name.replace(/ /g, '')+ '-' + myDate();
+	      	if (! fs.existsSync(newdir)){
+		      	fs.mkdirSync(newdir);
+		      }
+		    cb(null, newdir);
+	    }
+	},
+    
+    filename: (req, file, cb) => {
+    	if (file.fieldname === "modelFile") {
+	      	cb(null, file.originalname + '-' + myDate())
+	    } else { //file.fieldname === "soundFiles"
+	    	/* uploading files */
+	    	cb(null, file.originalname );
+	    }
+	}
+});
+
+const upload = multer({storage: fileStorage});
+
+
 // for mongodb --------------------------------------
 const MongoClient = require('mongodb').MongoClient
 var ObjectId = require('mongodb').ObjectID;
@@ -13,17 +43,27 @@ var ObjectId = require('mongodb').ObjectID;
 // for getting directory listings ----------
 const path = require('path');
 const fs = require('fs');
-//zip!
-var zip = require('express-zip');
-//------------------------------------------
 
-let verbose=true;
+// for zipping files in-line before sending
+// https://www.npmjs.com/package/express-zip
+var zip = require('express-zip');
+
+
+//----------for resampling saudio in python -----------
+// https://www.npmjs.com/package/python-shell
+let {PythonShell} = require('python-shell')
+
+//-----------------------------------------
+
+let verbose=false;
 
 const app = express();
 
 portnum=process.argv[2] || 3000;
 
-app.use(express.static('PSOUNDSET'),function (req, res, next) {
+
+// The sounds can by accessed (and played) if they users have the path starting from inside PSOUNDSET
+app.use(express.static(sfsetdir),function (req, res, next) {
   if (verbose){console.log('Request Type:', req.url)}
   next()
 });
@@ -33,27 +73,19 @@ app.use(express.static('public'))
 let dbmodder=false; // will use to render capabilities for db admin (modify db) vs user (search db)
 
 if (portnum==55555){
-	//app.listen(portnum, 'localhost', function(){
-	//	console.log("server listening on port " + portnum)
-	//});
-	dbmodder=true;
-} //else{
-	app.listen(portnum, function(){
-		console.log("server listening on port " + portnum)
-	});
+	dbmodder=true; // flip some switches for code generation: admin vs user
+} 
 
-//}
+app.listen(portnum, function(){
+	console.log("server listening on port " + portnum)
+});
+
 
 // Make sure you place body-parser before your CRUD handlers!
 // Extract data from the <form> element and add them to the body property in the request object.
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use( bodyParser.json() );
 
-// All your handlers here...
-// app.get('/', (req, res) => {/*...*/})
-//app.post('/quotes', (req, res) => {
-//	console.log(req.body)
-//})
 //=================================================
 app.set('view engine', 'ejs')
 
@@ -65,7 +97,7 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	// get the collection or create if does not exist (I guess)
     const pSoundSetsCollection = db.collection('pSoundSets')
 
-
+    //-------------------------------------------------------------------------
 	// Render the whole web page with the form in index.ejs and the list of pSoundSets in the database
 	app.get('/', (req, res) => {
 		db.collection('pSoundSets').find().toArray()
@@ -77,16 +109,32 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	    .catch(/* ... */)
 	})
 
-
+	//-------------------------------------------------------------------------
+	// UPLOAD one sound
 	// The <form> uses the POST method and sends '/pSoundSets' as the action attribute 
 	//    modelFile is the name of the html element in the form for files
-    app.post('/pSoundSets', upload.single("modelFile"), (req, res) => {
-    	//if (verbose){console.log("adding new pset : " + JSON.stringify(req.body))}
-    	console.log("==================uploading soundfile " + JSON.stringify(req.file));
-    	req.file && (req.body.modelFile=req.file);
+    app.post('/pSoundSets', upload.fields([{
+           name: 'modelFile', maxCount: 1
+         }, {
+           name: 'soundFiles', maxCount: 101
+         }]), (req, res) => {
 
     	if (verbose){console.log("**********adding new pset : " + JSON.stringify(req.body))}
 
+    	//save the file data on the db record so we have access to it later - is there a better way?
+    	if (req.files && req.files['modelFile']){
+    		console.log("==================pset uploading modelFile " + JSON.stringify(req.files['modelFile'][0]));
+    		req.body.modelFile=req.files['modelFile'][0];
+    	}
+    	console.log("and the modelFile path is "+ JSON.stringify(req.body.modelFile))
+    	
+    	
+    	if (req.files && req.files['soundFiles']){
+    		console.log("++++++++++++++++++++ pset uploading soundfile " + JSON.stringify(req.files['soundFiles']));
+    		req.body.soundFiles=req.files['soundFiles'];
+    	}
+    	console.log("and the soundFiles destination(path) is "+ req.body.soundFiles[0].destination)
+    	
 
 	  // the req.body is the complete JSON object parsed from the <form>
 	  	pSoundSetsCollection.insertOne(req.body)
@@ -96,18 +144,27 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
     	.catch(error => console.error(error))
 	})
 
+    //------------------------------------------------------------------
+    // REPLACE (update)
 	// Replace an existing document with another (used for updateing entire document)
-	app.post('/replace', upload.single("modelFile"), (req, res) => {
+	app.post('/replace', upload.fields([{
+           name: 'modelFile', maxCount: 1
+         }, {
+           name: 'soundFiles', maxCount: 101
+         }]), (req, res) => {
 		if (verbose){console.log("Replacing " + req.body._id);}
-		console.log("=====================uploading soundfile " + JSON.stringify(req.file));
+		if (req.files && req.files['modelFile']){
+    		console.log("==================replacing with  soundfile " + JSON.stringify(req.files['modelFile'][0]));
+    	}
 		req.body=prepareID(req.body);
 
 		// first get the old record in case we need to get its file attribute
 		let removeOldModelFile=true;
+		let removeOldSoundFiles=true;
 		pSoundSetsCollection.findOne({"_id": req.body._id})
 		.then(oldRecord => {
-			if (req.file){ // if new has a file, it is intended to also replace the old one
-				req.body.modelFile=req.file
+			if (req.files && req.files['modelFile']){ // if new has a file, it is intended to also replace the old one
+				req.body.modelFile=req.files['modelFile'][0];
 			} else {
 				console.log("in replace, no file attribute")
 				if (req.body.modelFileName && (req.body.modelFileName == oldRecord.modelFileName)){ // then the intention is to retain the previous file attribute
@@ -116,10 +173,22 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 					removeOldModelFile=false
 				}
 			}
-
 			if (removeOldModelFile){
 				console.log("in replace, call deleteModelFile on old record")
 				deleteModelFile(pSoundSetsCollection, oldRecord);
+			}
+
+			// NOW DO THE SAME FOR THE SOUND FILES
+			if (req.files && req.files['soundFiles']){ // if new has a file, it is intended to also replace the old one
+				req.body.soundFiles=req.files['soundFiles'];
+			} else {
+				console.log("////////IN REPLACE, no soundFiles attribute, so keep old file") /// TRANSFER FROM OLD TO NEW
+				req.body.soundFiles=oldRecord.soundFiles;
+				removeOldModelFile=false;
+			}
+			if (removeOldSoundFiles){
+				console.log("/////////////IN REPLACE, call deleteOldSoundFiles on old record")
+				deleteSoundFiles(pSoundSetsCollection, oldRecord);
 			}
 
 			// now we are ready to do the replacement with our updated req.body
@@ -133,13 +202,12 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 		    })
 	    	.catch(error => console.error(error))
 
-
 	    })
 		.catch(error => console.error(error)) 
 	});
 
 	//----------------------------------------------------------------------------
-	// SEARCH
+	// SEARCH with constraints, possibly return many
 	app.post('/search', (req, res) => {
 		if (verbose){console.log("Server Searching " + req.body)};
 
@@ -153,8 +221,8 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	    .catch(error => console.error(error)) 
 	});
 
-//---------------------------------------------------------------------------------
-	// Retireive a single record
+	//---------------------------------------------------------------------------------
+	// RETREIVE a single record by ID
 	app.put('/one', (req, res) => {
 		if (verbose){console.log("requesting to retrieve : " + req.body._id)};
 
@@ -171,58 +239,88 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	    	.catch(error => console.error(error)) 
 	});
 
-/*
-	// Retireive a singe record
-	app.put('/zip', (req, res) => {
-		console.log("preparing to zip up sounds for " + req.body._id);
-		req.body=prepareID(req.body);
-		
-		//db.collection('pSoundSets').findOne({"_id": new ObjectId(req.body._id)})
-		pSoundSetsCollection.findOne(req.body)
-			.then(result => {
-			      console.log("OK, send result: " + result);
-			      res.zip([{path: 'PSOUNDSET/'+result.name+"/"+result.name+"_16k", name: result.name+"_16k"}]);
-			
-//			      readdir('PSOUNDSET/'+result.name+"/"+result.name+"_16k")
-//			      .then(dirs =>{
-//			      	dirs.forEach(function (item, index, arr){
-//			      		arr[index] = {pathitem * 10;
-//			      	})
-//			      	//res.send(dirs)
-
-		    })
-	    	.catch(error => console.error(error)) 
-	});
-*/
+	//--------------------------------------------------------------------
+	// ZIP and download fileset
 	app.get('/zip', (req, res) => {
 		let sid = req.query.sid;
 		if (verbose){console.log("in soundfile request, sid = " + sid)}
 		let qobj={"_id":  new ObjectId(sid)}
 
+		let sr=req.query.sr;
+
 		//pSoundSetsCollection.findOne(req.body)
 		pSoundSetsCollection.findOne(qobj)
 			.then(result => {
 				if (verbose){console.log("OK, send result: " + result)};
-				readdir('PSOUNDSET/'+result.name+"/"+result.name+"_16k")
-			    .then(dirs =>{
-			      	dirs.forEach(function (item, index, arr){
-			      		arr[index] = {path : 'PSOUNDSET/'+result.name+"/"+result.name+"_16k/" + item, name: result.name+"_16k/"+item}
-			      	});
-			      	if (verbose){console.log("Here is what we will zip " + dirs)}
-			     	res.zip(dirs, result.name+"_16k"+".zip");
-		    })
+
+				let myPath;
+				if (result && result.soundFiles){
+					console.log("in zip, it has a soundfiles attribute")
+					myPath = result.soundFiles[0].destination;
+				 } 
+
+				 if (result.sr != sr){  // run some python!
+				 	console.log("Caller requesting SR = " + sr);
+
+				 	let newdir = '/scratch/'+result.name
+				 	if (! fs.existsSync(newdir)){
+				      	fs.mkdirSync(newdir);
+				    }
+
+				 	let options = {
+					  mode: 'text',
+					  pythonPath: '/home/lonce/anaconda3/bin/python',
+					  pythonOptions: ['-u'], // get print results in real-time
+					  scriptPath: './python',
+					  args: [myPath, newdir, sr]
+					};
+					 
+					PythonShell.run('convert.py', options, function (err, pyresults) {
+						if (err) throw err;
+						// results is an array consisting of messages collected during execution
+						console.log('results: %j', pyresults);
+						console.log("done with convert")
+						//zipnsend(newdir, result.name+"_"+sr2shorthand(sr), res.zip)
+					
+						let nm=result.name+"_"+sr2shorthand(sr);
+						console.log("9999999999999999999    nm is " +nm)
+						readdir(newdir)
+					    .then(farray =>{
+					      	farray.forEach(function (item, index, arr){
+					      		arr[index] = {path : newdir + '/'+item, name: nm + "/"+item}
+					      	});
+					      	if (verbose){console.log("Here is what we will zip " + JSON.stringify(farray))}
+					     	res.zip(farray, nm+".zip");
+
+					     // SHOULD DELETE /scratch files HERE!
+						})
+
+					})
+
+				 } else{ // no need to run the python sr conversion script 
+
+					readdir(myPath)
+				    .then(farray =>{
+				      	farray.forEach(function (item, index, arr){
+				      		arr[index] = {path : myPath + '/'+item, name: result.name+"_pSoundSet/"+item}
+				      	});
+				      	if (verbose){console.log("Here is what we will zip " + JSON.stringify(farray))}
+				     	res.zip(farray, result.name+"_pSoundSet"+".zip");
+		    		})
+				}
+			})
 	    	.catch(error => {
 	    		console.error(error);
 	    		res.send("cannot find sound " + sid)
 	    	});
 		});
-	})
+	
 
 
-//------------------------------------------------------------------------------
-	// Retireive a list of all sound files for record with submitted _id 
+	//------------------------------------------------------------------------------
+	// CREATE a webpage of the list of playabile files in a fileset - return
+	// Retireive by ID  
 	// This respnds to a URL request with a query parameter
-	// Return: a page rendered with the sound list
 	app.get('/soundfiles', (req, res) => {
 		let sid = req.query.sid;
 		if (verbose){console.log("in soundfile request, sid = " + sid)}
@@ -231,18 +329,27 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 		//pSoundSetsCollection.findOne(req.body)
 		pSoundSetsCollection.findOne(qobj)
 			.then(result => {
-			      if (verbose){console.log("OK, found the record for soundfile request: " + result.name)};
-			      //console.log("__dirname is " + __dirname)
-			      let myPath=result.name+"/"+result.name+"_16k/";
-			      readdir('PSOUNDSET/'+result.name+"/"+result.name+"_16k")
-			      .then(dirs =>{
-			      	//res.send(dirs)
-			      	res.render('soundFileList.ejs', {path : myPath, ssname:result.name, sid: sid, sflist: dirs})
-			      })
-			      .catch(error => {
-			      	console.error(error);
-			      	res.send("soundfiles do not exist");
-			      });
+		      if (verbose){console.log("OK, found the record for soundfile request: " + result.name)};
+		      //console.log("__dirname is " + __dirname)
+
+		      let myPath;
+		      if (result && result.soundFiles){
+		  		console.log("in deleteSoundFiles, it has a soundfiles attribute")
+		  		myPath = result.soundFiles[0].destination;
+
+		  	  } 
+		      //let myPath=result.name+"/"+result.name+"_16k/";
+		      //readdir('PSOUNDSET/'+result.name+"/"+result.name+"_16k")
+		      readdir(myPath)
+		      .then(farray =>{
+		      	//res.send(dirs)
+		      	console.log("realtive path is " + path.relative(sfsetdir,myPath))
+		      	res.render('soundFileList.ejs', {path : path.relative(sfsetdir,myPath), ssname:result.name, sid: sid, sflist: farray})
+		      })
+		      .catch(error => {
+		      	console.error(error);
+		      	res.send("soundfiles do not exist");
+		      });
 		    })
 	    	.catch(error => {
 	    		console.error(error);
@@ -250,13 +357,8 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	    	});
 	});
 
-	// -------------------------
-	/*
-	app.get('/modelFile/:sid',(req,res)=>{  
-
-		if (verbose){console.log("in modelFile request, sid = " + req.params.sid)}// + sid)}
-		let qobj={"_id":  new ObjectId(req.params.sid)}
-	*/
+	// --------------------------------------------------------
+	// DOWNLOAD the modelFile
 	app.get('/modelFile',(req,res)=>{  
 		let sid = req.query.sid;
 		if (verbose){console.log("in modelFile request, sid = " + sid)}
@@ -294,13 +396,14 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	//----------------------------------------------------
 	// DELETE one record
 	app.delete('/one', (req, res) => {
-	  
-
 		req.body=prepareID(req.body); // deletee requests come in with _id attributes only
-	  /*
-	*/
+
+		console.log("/////////////////DELETE")
+
 		// First delete the modelFile if it has one
 		deleteModelFile(pSoundSetsCollection, req.body);
+		// and the sound files
+		deleteSoundFiles(pSoundSetsCollection, req.body);
     	// now delete the db record
 		pSoundSetsCollection.deleteOne(req.body)
 	    .then(result => {
@@ -312,14 +415,10 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	    .catch(error => console.error(error))
 	})
 
-
-    //app.use(/* ... */)
-    //app.get(/* ... */)
-    //app.post(/* ... */)
-    //app.listen(/* ... */)
   })
   .catch(error => console.error(error))
-  //
+
+//
 //=======================================================================
 //                             Utilities
 //=======================================================================
@@ -343,10 +442,13 @@ const clientFilterObj=function(item){
 
 	if (item.modelFile){
 		console.log("  don't send client the modelFile attribute  ")
-		// modelFileName corresponds to html element name on client side
-		//item.modelFileName = item.modelFile.originalname;
 		delete item.modelFile;
 	}
+	if (item.soundFiles){
+		console.log("  don't send client the soundFiles attribute  ")
+		delete item.soundFiles;
+	}
+
 	return item;
 }
 
@@ -361,7 +463,6 @@ const clientFilterArray=function(sarray){
 
 // If the obj is on the db, and it has a modelFile, then delete it
 const deleteModelFile = function(collection, obj){
-
 	collection.findOne(obj)
 	.then(result => {
 	  	if (result && result.modelFile){
@@ -372,5 +473,45 @@ const deleteModelFile = function(collection, obj){
 		}
     })
 	.catch(error => console.error(error)) 
-
 }
+
+const deleteSoundFiles = function(collection, obj){
+	collection.findOne(obj)
+	.then(result => {
+		console.log("in deleteSoundFiles, found our target record")
+	  	if (result && result.soundFiles){
+	  		console.log("in deleteSoundFiles, it has a soundfiles attribute")
+	  		let soundFilesDestination = result.soundFiles[0].destination;
+	  		console.log("now delete " + soundFilesDestination) 
+			fs.rmdir(soundFilesDestination, { recursive: true }, (error) => { 
+				  if (error) { 
+				    console.log(error); 
+				  } 
+				  else { 
+				    console.log("deleted modelFile " + soundFilesDestination);
+				}
+			});
+		};
+	});
+}
+
+
+const myDate=function(){
+	let d=new Date()
+	return(`${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}.${d.getHours()}.${d.getMinutes()}.${d.getSeconds()}`);
+}
+
+const sr2shorthand=function(sr){
+	console.log("in sr2shorhand .................. got " + sr)
+	switch(sr) {
+	  case '16000':
+	    return "16k"
+	  case '22050':
+	    return "22K"
+	  case '44100':
+	    return "44K"
+	  default:
+	    return ''
+	}  
+}
+
