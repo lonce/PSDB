@@ -26,12 +26,13 @@ let fillForm=function(obj, id=""){
 
 // Adds an event listener to the button for each soundSet
 // A 'click' then fetches the record for the soundSet from the DB
-let retreiveRecord = function(sid){
+let retreiveRecord = function(sid, q={}){
 	return new Promise(function(resolve, reject) { 
 		fetch('/one', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({"_id": sid})
+				body: JSON.stringify({"_id": sid, "projectFields" : q})
+				//body: JSON.stringify({"_id": sid})
 				//body: JSON.stringify({"name": "jor"})
 			}
 			).then ((response)=>{
@@ -41,10 +42,7 @@ let retreiveRecord = function(sid){
 	})
 };
 
-// The server side will only zip in an apt.get, so have to send a URL request, not a fetch
-let retreiveZippedSSet = function(sid, sr=16000){
-	window.open(encodeURI('/zip?sid='+sid+'&sr='+sr), '_blank');
-};
+
 
 // I don't know how to do this with a fetch
 // Get an HTML page constructed for the list of sounds in the soundSet
@@ -81,62 +79,77 @@ const getSoundDataButt = document.getElementsByClassName("soundNameButt")
 let soundButtonAction=function(ev){
     event.preventDefault();
     let sid = ev.target.id;
-    //Add contextual menu here
-    // We will only define a delete menu item if this is for the db administrator
-    let delMenuElmt= dbmodder ? 
-    	{label: 'Delete', onClick: () => {
-        	if (confirm(`deleting ${sid}`)) {
-				console.log(`deleting ${sid}`)
 
-				deleteRecord(sid)
-				.then((data) => {
-		    		alert(data);
-		    		window.location.reload() // gets the modified list from theserver. Could be more efficient......
-		  		});
-			}
+    /*
+    retreiveRecord(sid, {"sr" : 1})
+	.then(res=>{
+		console.log("SR QUERY RESULT is " + JSON.stringify(res));
+		let nativeSR=res.sr;
+		// for some reason, I can't put my menu constructors in the .then!!!!!
+	});	
+	*/
 
-        }} : {};
+		let nativeSR=document.getElementById(sid).getAttribute("data-sr");
+		console.log("nativeSR is " + nativeSR)
+	    //Add contextual menu here
+	    // We will only define a delete menu item if this is for the db administrator
+	    let delMenuElmt= dbmodder ? 
+	    	{label: 'Delete', onClick: () => {
+	        	if (confirm(`deleting ${sid}`)) {
+					console.log(`deleting ${sid}`)
 
-    new Contextual({
-        isSticky: false,
-        items: [
-        	{label: "ID: " + sid
-        	},
-        	{type: 'seperator'}, //---------------------
-            {label: 'Show Metadata', onClick: () => {
-            	retreiveRecord(sid)
-				.then((data) => {
-		    		console.log(data);
-		    		fillForm(data, sid);
-		  		});
-				}/* short-cut could go here */},
-			{type: 'seperator'}, //---------------------
-			/*
-			{type: 'submenu', label: 'Sub menu', items: [
-                        {label: 'Subitem 1', onClick: () => {}},
-                        {label: 'Subitem 2', onClick: () => {}},
-                        {label: 'Subitem 3', onClick: () => {}},
-                    ]},
-                    */
-            {type: 'seperator'}, //---------------------     
-			{type: 'hovermenu', label: 'Download Zipped', items: [
-                        {label: '44100 sr', onClick: () => {retreiveZippedSSet(sid, 44100)}},
-                        {label: '22050 sr', onClick: () => {retreiveZippedSSet(sid, 22050)}},
-                        {label: '16000 sr', onClick: () => {retreiveZippedSSet(sid, 16000)}},
-                    ]},
+					deleteRecord(sid)
+					.then((data) => {
+			    		alert(data);
+			    		window.location.reload() // gets the modified list from theserver. Could be more efficient......
+			  		});
+				}
 
-			{type: 'seperator'}, //---------------------
-            {label: 'Show Soundfiles (new tab)', onClick: () => {
-            	retreiveSoundFiles(sid)
-				}/* short-cut could go here */},
+	        }} : {};
 
-            {type: 'seperator'}, //---------------------
-            {type: 'seperator'}, //---------------------
-            delMenuElmt
-        ]
-    });
+	     console.log("now create contextual menu")
+ 
 
+	    new Contextual({
+	        isSticky: false,
+	        items: [
+	        	{label: "ID: " + sid
+	        	},
+	        	{type: 'seperator'}, //---------------------
+	            {label: 'Show Metadata', onClick: () => {
+	            	retreiveRecord(sid)
+					.then((data) => {
+			    		console.log(data);
+			    		fillForm(data, sid);
+			  		});
+					}/* short-cut could go here */},
+				{type: 'seperator'}, //---------------------
+				/*
+				{type: 'submenu', label: 'Sub menu', items: [
+	                        {label: 'Subitem 1', onClick: () => {}},
+	                        {label: 'Subitem 2', onClick: () => {}},
+	                        {label: 'Subitem 3', onClick: () => {}},
+	                    ]},
+	                    */
+	            {type: 'seperator'}, //---------------------     
+				{type: 'hovermenu', label: 'Download Zipped', items: [
+	                        {label: '44100 sr ' + (nativeSR=="44100" ? "(orig)" : "(resampled)"), onClick: () => {retreiveZippedSSet(sid, 44100)}},
+	                        {label: '22050 sr ' + (nativeSR=="22050" ? "(orig)" : "(resampled)"), onClick: () => {retreiveZippedSSet(sid, 22050)}},
+	                        {label: '16000 sr ' + (nativeSR=="16000" ? "(orig)" : "(resampled)"), onClick: () => {retreiveZippedSSet(sid, 16000)}},
+	                    ]},
 
+				{type: 'seperator'}, //---------------------
+	            {label: 'Show Soundfiles (new tab)', onClick: () => {
+	            	retreiveSoundFiles(sid)
+					}/* short-cut could go here */},
+
+	            {type: 'seperator'}, //---------------------
+	            {type: 'seperator'}, //---------------------
+	            delMenuElmt
+	        ]
+	    }); // new Contextual
+
+//	}); //.then
 
 }
 
@@ -357,3 +370,4 @@ let form2SearchObj=function(obj){
 
 	return retObj;
 }
+

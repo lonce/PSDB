@@ -14,6 +14,7 @@
 
 
     <script defer src="appscripts//main.js"></script>
+    <script type="text/javascript" src="/appscripts/common.js"> </script>
 
     <!-- for conext menu -->
     <link rel="stylesheet" href="/css/contextual.css">
@@ -177,8 +178,8 @@
       <!-- Loop through PSoundSetList -->
       <% for(var i = 0; i < pSoundSets.length; i++) {%>
         <li class="psets" style="list-style-type:none">
-          <!-- the id is the sound_id, which we use to getElementByEd, but as a data-user attribute for passing that info to context-menue and to the database -->
-          <input value="<%= pSoundSets[i].name %>" id="<%= pSoundSets[i]._id %>"   class="soundNameButt" type="text"  > 
+          <!-- the id is the sound_id, which we use to getElementByEd, but as a data-user attribute for passing that info to context-menue and to the database --> <!-- Cooler is the use of custom data attributes, see data-sr ... get them with elmt.getAttribute('data-sr') -->
+          <input value="<%= pSoundSets[i].name %>" id="<%= pSoundSets[i]._id %>"   class="soundNameButt" type="text"  data-sr="<%= pSoundSets[i].sr%>" > 
           <span>  <%=  pSoundSets[i].keywords %></span>  
           <!-- Output description from the iterated pSoundSets object -->
           <!-- <span>(descritpion) <%= pSoundSets[i].description %></span> ; -->

@@ -6,25 +6,18 @@
     <title>PSoundSet</title>
 
 
-    <!-- for conext menu -->
-    <link rel="stylesheet" href="/css/contextual.css">
-    <link rel="stylesheet" href="/css/contextual.theme.css">
-    <script src="/appscripts/contextual.js"></script>
-
-    <script>
-      let retreiveZippedSSet = function(sid){
-        window.open(encodeURI('/zip?sid='+sid), '_blank');
-      };
-    </script>
+    <link rel="stylesheet" type="text/css" href="/css/main.css">
+    <script type="text/javascript" src="/appscripts/common.js"> </script>
 
   </head>
 
   <body>
     <h2> Sound Set:  <%= ssname %> </h2>
-    (_id: <%= sid %>) 
-    <input type="button" value="zip and download 44100 sr" onclick="retreiveZippedSSet('<%= sid %>', 44100)" >
-    <input type="button" value="zip set and download 22050 sr" onclick="retreiveZippedSSet('<%= sid %>', 22050)" >
-    <input type="button" value="zip set and download 16000 sr" onclick="retreiveZippedSSet('<%= sid %>', 16000)" >
+    <!-- (_id: <%= sid %>)  -->
+
+    <input type="button" value='<%= 'zip/download 44100 sr ' + ((sr==44100) ? "(original)" : "(resampled)") %>' onclick="retreiveZippedSSet('<%= sid %>', 44100)" >
+    <input type="button" value='<%= 'zip/download 22050 sr ' + ((sr==22050) ? "(original)" : "(resampled)") %>' onclick="retreiveZippedSSet('<%= sid %>', 22050)" >
+    <input type="button" value='<%= 'zip/download 16000 sr ' + ((sr==16000) ? "(original)" : "(resampled)") %>' onclick="retreiveZippedSSet('<%= sid %>', 16000)" >
 
     <div style="background-color:lightsteelblue;padding:15px; border: 1px solid #FF0000;" >
 
