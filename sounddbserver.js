@@ -297,7 +297,7 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 
 				 	let options = {
 					  mode: 'text',
-					  pythonPath: '/home/lonce/anaconda3/bin/python',
+					  pythonPath: '/usr/bin/python3',
 					  pythonOptions: ['-u'], // get print results in real-time
 					  scriptPath: './python',
 					  args: [myPath, newdir, sr]
