@@ -2,6 +2,7 @@
 let debug=require('debug')('sounddbserver')
 //===================================================
 const express = require('express');
+const https = require('https');
 const bodyParser= require('body-parser')
 
 //--------------------------------------------------
@@ -59,12 +60,15 @@ var zip = require('express-zip');
 let {PythonShell} = require('python-shell')
 
 //-----------------------------------------
-debug("VERY GOOD - READY TO DEBUG %s", process.argv[0] )
 
 const app = express();
-
 portnum=process.argv[2] || 3000;
 
+
+const https_options = {
+  key: fs.readFileSync("/etc/letsencrypt/live/sonicthings.org/privkey.pem"),
+  cert: fs.readFileSync("/etc/letsencrypt/live/sonicthings.org/fullchain.pem") // these paths might differ for you, make sure to copy from the certbot output
+};
 
 // The sounds can by accessed (and played) if they users have the path starting from inside PSOUNDSET
 app.use(express.static(sfsetdir),function (req, res, next) {
@@ -80,8 +84,13 @@ if (portnum==55555){
 	dbmodder=true; // flip some switches for code generation: admin vs user
 } 
 
-app.listen(portnum, function(){
-	console.log("server listening on port " + portnum)
+//app.listen(portnum, function(){
+//	console.log("server listening on port " + portnum)
+//});
+
+const httpsServer = https.createServer(https_options, app);
+httpsServer.listen(portnum, () => {
+	console.log('HTTPS Server running on port ' + portnum);
 });
 
 

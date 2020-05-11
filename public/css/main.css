@@ -1,5 +1,9 @@
 /* Main style */
 
+#intro {
+    color : maroon;
+}
+
 .soundNameButt{
     width: 9em;
     border: 2px solid #113311;

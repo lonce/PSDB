@@ -15,10 +15,16 @@ let fillForm=function(obj, id=""){
 	document.getElementById("soundForm").reset(); 
 	document.getElementById("currentIDElement").value=id;
 	for (key in obj){
-		if (key=="_id" || key=="SUBMIT NEW" || key=="UPDATE CURRENT"){
-			continue;
-		}
+	    if (key=="_id" || key=="SUBMIT NEW" || key=="UPDATE CURRENT"){
+		continue;
+	    }
+	    if ((! dbmodder) && key== "soundFilesName") { continue;}
+	    try {
 		document.getElementById(key).value=obj[key]
+	    }
+	    catch(err){
+		console.log("key = " + key + "; Error: "+ err);
+	    }
 	} 
 }
 
@@ -105,7 +111,7 @@ let soundButtonAction=function(ev){
 			  		});
 				}
 
-	        }} : {};
+	        }} : {label : ""};
 
 	     console.log("now create contextual menu")
  
@@ -123,27 +129,27 @@ let soundButtonAction=function(ev){
 			    		fillForm(data, sid);
 			  		});
 					}/* short-cut could go here */},
-				{type: 'seperator'}, //---------------------
 				/*
+				{type: 'seperator'}, //---------------------
 				{type: 'submenu', label: 'Sub menu', items: [
 	                        {label: 'Subitem 1', onClick: () => {}},
 	                        {label: 'Subitem 2', onClick: () => {}},
 	                        {label: 'Subitem 3', onClick: () => {}},
 	                    ]},
 	                    */
-	            {type: 'seperator'}, //---------------------     
+		    {type: 'seperator'}, //---------------------
+	                        {label: 'Show Soundfiles (new tab)', onClick: () => {
+	            	              retreiveSoundFiles(sid)
+				}/* short-cut could go here */},
+
+	            {type: 'seperator'}, //---------------------
+		    {type: 'seperator'}, //---------------------     
 				{type: 'hovermenu', label: 'Download Zipped', items: [
 	                        {label: '44100 sr ' + (nativeSR=="44100" ? "(orig)" : "(resampled)"), onClick: () => {retreiveZippedSSet(sid, 44100)}},
 	                        {label: '22050 sr ' + (nativeSR=="22050" ? "(orig)" : "(resampled)"), onClick: () => {retreiveZippedSSet(sid, 22050)}},
 	                        {label: '16000 sr ' + (nativeSR=="16000" ? "(orig)" : "(resampled)"), onClick: () => {retreiveZippedSSet(sid, 16000)}},
 	                    ]},
 
-				{type: 'seperator'}, //---------------------
-	            {label: 'Show Soundfiles (new tab)', onClick: () => {
-	            	retreiveSoundFiles(sid)
-					}/* short-cut could go here */},
-
-	            {type: 'seperator'}, //---------------------
 	            {type: 'seperator'}, //---------------------
 	            delMenuElmt
 	        ]
