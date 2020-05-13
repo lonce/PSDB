@@ -13,18 +13,19 @@ sfsetdir='PSOUNDSET';  // storage location for sound files
 
 const fileStorage= multer.diskStorage({
     destination: (req, file, cb) => {
-    	if (file.fieldname === "modelFile") { // if uploading resume
+	console.log("    %%%%%%%%%%%%%%%% file object " + JSON.stringify(file));
+    	if (file.fieldname === "modelFile") { // if uploading model code
 	      cb(null, './uploads/modelFiles/');
-	    } else { // else uploading soundFiles
-	    	debug(" creating sound file directory named " + req.body.name.replace(/ /g, '')+ '-' + myDate());
-
-	      	let newdir=sfsetdir +'/'+req.body.name.replace(/ /g, '')+ '-' + myDate();
-	      	if (! fs.existsSync(newdir)){
-		      	fs.mkdirSync(newdir);
-		      }
-		    cb(null, newdir);
+	} else { // else uploading soundFiles
+	    // timeStamp added to req in middleware so all files in one upload will go to the same directory
+	    debug(" creating directory named " + req.body.name.replace(/ /g, '')+ '-' + req.timeStamp);
+	    let newdir=sfsetdir +'/'+req.body.name.replace(/ /g, '')+ '-' + req.timeStamp;
+	    if (! fs.existsSync(newdir)){
+		fs.mkdirSync(newdir);
 	    }
-	},
+	    cb(null, newdir);
+	}
+    },
     
     filename: (req, file, cb) => {
     	if (file.fieldname === "modelFile") {
@@ -98,6 +99,11 @@ httpsServer.listen(portnum, () => {
 // Extract data from the <form> element and add them to the body property in the request object.
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use( bodyParser.json() );
+// timeStamp used by fileStorage to create directories for sound files loaded together
+app.use(function (req, res, next) {
+    req.timeStamp=myDate();
+    next();
+})
 
 //=================================================
 app.set('view engine', 'ejs')
@@ -117,7 +123,8 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	// get the collection or create if does not exist (I guess)
     const pSoundSetsCollection = db.collection('pSoundSets')
 
-    //-------------------------------------------------------------------------
+
+      //-------------------------------------------------------------------------
 	// Render the whole web page with the form in index.ejs and the list of pSoundSets in the database
 	app.get('/', (req, res) => {
 		db.collection('pSoundSets').find({},{'projection' : clientProjection}).toArray()
@@ -135,7 +142,7 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
     app.post('/pSoundSets', upload.fields([{
            name: 'modelFile', maxCount: 1
          }, {
-           name: 'soundFiles', maxCount: 101
+             name: 'soundFiles', maxCount: 101, myNewDir:"yabadabadoo!"
          }]), (req, res) => {
 
     	debug("**********adding new pset : " + JSON.stringify(req.body));
