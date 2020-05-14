@@ -35,7 +35,7 @@ $ nohup node soundbserver.js (portnum} &> logfile &
 
 I protect access to the admin view with a minimal firewall set up on Linux thus:
 ```sh
-$ sudo iptables -I INPUT -p tcp --dport 55555 -s 202.133.209.92 -j ACCEPT 
+$ sudo iptables -I INPUT -p tcp --dport 55555 -s [your privileged ip address] -j ACCEPT 
 $ sudo iptables -A INPUT -p tcp --dport 55555 -j DROP
 ```
 To transfer between machines once you have populated with some data, you have to move the 'uploads' and 'PSOUNDSETS' folders, and to transfer the databse itself, you can use:
