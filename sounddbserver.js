@@ -340,6 +340,8 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 					      	//debug("Here is what we will zip " + JSON.stringify(farray))
 					     	res.zip(farray, nm+".zip");
 
+						/* TOO soon to delete - client hangs, even after they get dialog box.
+						   Have to do a cron job to clear up the scratch directory 
 					     	// now clean up the temporary directory of converted files
 					     	fs.rmdir(newdir, { recursive: true }, (error) => { 
 								if (error) { 
@@ -350,7 +352,9 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 								}
 							});
 
+*/
 						})
+
 
 					})
 
