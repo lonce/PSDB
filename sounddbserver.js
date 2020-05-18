@@ -5,6 +5,13 @@ const express = require('express');
 const https = require('https');
 const bodyParser= require('body-parser')
 
+
+const http = require('http');
+
+// created depending on the port number
+let httpServer; 
+let httpsServer;
+
 //--------------------------------------------------
 // for modelFile uploads
 const multer = require('multer');
@@ -63,13 +70,12 @@ let {PythonShell} = require('python-shell')
 //-----------------------------------------
 
 const app = express();
-portnum=process.argv[2] || 3000;
+let portnum=process.argv[2] || 3000;
 
-
-const https_options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/sonicthings.org/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/sonicthings.org/fullchain.pem") // these paths might differ for you, make sure to copy from the certbot output
-};
+//const https_options = {
+//  key: fs.readFileSync("/etc/letsencrypt/live/sonicthings.org/privkey.pem"),
+//  cert: fs.readFileSync("/etc/letsencrypt/live/sonicthings.org/fullchain.pem") // these paths might differ for you, make sure to copy from the certbot output
+//};
 
 // The sounds can by accessed (and played) if they users have the path starting from inside PSOUNDSET
 app.use(express.static(sfsetdir),function (req, res, next) {
@@ -81,18 +87,30 @@ app.use(express.static(sfsetdir),function (req, res, next) {
 app.use(express.static('public'))
 let dbmodder=false; // will use to render capabilities for db admin (modify db) vs user (search db)
 
+
+
 if (portnum==55555){
 	dbmodder=true; // flip some switches for code generation: admin vs user
 } 
 
-//app.listen(portnum, function(){
-//	console.log("server listening on port " + portnum)
-//});
+console.log("WILL USE PORT " + portnum)
+if (portnum==3000){
+	httpServer = http.createServer(app);
+	httpServer.listen(3000);
+}else{
+	httpsServer = https.createServer({
+  		key: fs.readFileSync("/etc/letsencrypt/live/sonicthings.org/privkey.pem"),
+  		cert: fs.readFileSync("/etc/letsencrypt/live/sonicthings.org/fullchain.pem") // these paths might differ for you, make sure to copy from the certbot output
+		}, app);
+	httpsServer.listen(portnum, () => {
+		console.log('HTTPS Server running on port ' + portnum);
+	});
+}
 
-const httpsServer = https.createServer(https_options, app);
-httpsServer.listen(portnum, () => {
-	console.log('HTTPS Server running on port ' + portnum);
-});
+
+
+
+
 
 
 // Make sure you place body-parser before your CRUD handlers!

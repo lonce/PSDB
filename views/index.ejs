@@ -19,6 +19,7 @@
     <!-- for conext menu -->
     <link rel="stylesheet" href="/css/contextual.css">
     <link rel="stylesheet" href="/css/contextual.theme.css">
+    <link rel="stylesheet" href="/css/modal.css">
     <script src="/appscripts/contextual_lwmod.js"></script>
     <link defer rel="stylesheet" href="/css/main.css">
     
@@ -27,6 +28,17 @@
   </head>
 
   <body>
+
+    <button id="modal-btn" > click me, I make a modal</button>
+    <div class="modal" id="downloadModal">
+      <div class="modal-content">
+        <span class="close-btn" hidden>&times;</span> 
+        <p style="text-align:center">RESAMPLING</p>
+        <p style="text-align:center">Click to hide</p>
+      </div>
+    </div>
+
+
 
     <% if(dbmodder) {%>
       <h1>Parameterized Sound Set (admin)</h1>

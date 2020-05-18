@@ -377,3 +377,28 @@ let form2SearchObj=function(obj){
 	return retObj;
 }
 
+//======================================================
+
+
+//let modalBtn = document.getElementById("modal-btn")
+let modal = document.querySelector(".modal")
+/*
+let closeBtn = document.querySelector(".close-btn")
+modalBtn.onclick = function(){
+  modal.style.display = "block"
+}
+closeBtn.onclick = function(){
+  modal.style.display = "none"
+}
+*/
+window.onclick = function(e){
+  if(e.target == modal){
+    modal.style.display = "none"
+  }
+}
+
+document.getElementById("downloadModal").addEventListener("click", function(){
+	console.log("Got the click")
+	modal.style.display = "none"
+})
+
