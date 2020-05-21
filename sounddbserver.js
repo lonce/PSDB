@@ -71,6 +71,7 @@ let {PythonShell} = require('python-shell')
 
 const app = express();
 let portnum=process.argv[2] || 3000;
+let DEV = process.argv.includes("--dev")
 
 //const https_options = {
 //  key: fs.readFileSync("/etc/letsencrypt/live/sonicthings.org/privkey.pem"),
@@ -94,9 +95,10 @@ if (portnum==55555){
 } 
 
 console.log("WILL USE PORT " + portnum)
-if (portnum==3000){
+if (DEV){
+	console.log("running as dev - http")
 	httpServer = http.createServer(app);
-	httpServer.listen(3000);
+	httpServer.listen(portnum);
 }else{
 	httpsServer = https.createServer({
   		key: fs.readFileSync("/etc/letsencrypt/live/sonicthings.org/privkey.pem"),
@@ -154,7 +156,7 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 	})
 
 	//-------------------------------------------------------------------------
-	// UPLOAD one sound
+	// UPLOAD one sound set
 	// The <form> uses the POST method and sends '/pSoundSets' as the action attribute 
 	//    modelFile is the name of the html element in the form for files
     app.post('/pSoundSets', upload.fields([{
@@ -329,6 +331,30 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 				      	fs.mkdirSync(newdir);
 				    }
 
+
+
+
+				    // First copy param files to /scratch where sr converted sound files will go
+					readdir(myPath)
+					.then(farray =>{
+						// first filter out the param files (if any)
+						let paramfilesOnly = farray.filter(function(file) {
+					    	return path.extname(file).toLowerCase() == '.params';
+						});
+
+						console.log("copying param files to /scratch " + paramfilesOnly)
+						paramfilesOnly.forEach(function (item, index, arr){
+					      		fs.copyFileSync(myPath+'/'+item, newdir+'/'+item)
+					      	});
+					})
+					.catch(error => {
+						console.error(error);
+						res.send("had trouble copying param files to scratch destination for zipping");
+					});
+
+
+					// Now convert the sample rate, writing result to /scratch
+
 				 	let options = {
 					  mode: 'text',
 					  pythonPath: '/usr/bin/python3',
@@ -348,7 +374,7 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 						console.log("done with convert")
 						//zipnsend(newdir, result.name+"_"+sr2shorthand(sr), res.zip)
 					
-						let nm=result.name+"_"+sr2shorthand(sr);
+						let nm=result.name+"_"+sr2shorthand(sr);  // make a nice name for the sr, eg 16k
 
 						readdir(newdir)
 					    .then(farray =>{
@@ -416,11 +442,15 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 		  		myPath = result.soundFiles[0].destination;
 
 		  	  } 
-		      //let myPath=result.name+"/"+result.name+"_16k/";
-		      //readdir('PSOUNDSET/'+result.name+"/"+result.name+"_16k")
+
 		      readdir(myPath)
 		      .then(farray =>{
-		      	res.render('soundFileList.ejs', {path : path.relative(sfsetdir,myPath), ssname:result.name, sid: sid, sflist: farray, sr: result.sr})
+		      	// first filter out the param files (if any)
+		      	let soundfilesOnly = farray.filter(function(file) {
+				    return path.extname(file).toLowerCase() != '.params';
+				});
+				// now render the page as a list of audio player controls for each sound file
+		      	res.render('soundFileList.ejs', {path : path.relative(sfsetdir,myPath), ssname:result.name, sid: sid, sflist: soundfilesOnly, sr: result.sr})
 		      })
 		      .catch(error => {
 		      	console.error(error);

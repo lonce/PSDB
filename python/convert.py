@@ -14,7 +14,8 @@ new_sr = int(sys.argv[3])
 if not os.path.exists(todir):
     os.makedirs(todir)
     
-files = [f for f in os.listdir(fromdir) if os.path.isfile(os.path.join(fromdir, f))]
+# filter out directories and param files (target is any file in sound formats)
+files = [f for f in os.listdir(fromdir) if (os.path.isfile(os.path.join(fromdir, f)) and not f.endswith(".params"))]
 for filename in files:
     print(os.path.join(fromdir, filename))
     fname=os.path.join(fromdir, filename)

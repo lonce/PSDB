@@ -7,11 +7,31 @@
 
 
     <link rel="stylesheet" type="text/css" href="/css/main.css">
-    <script type="text/javascript" src="/appscripts/common.js"> </script>
+    <script defer type="text/javascript" src="/appscripts/common.js"> </script>
+    
+    <!-- for conext menu -->
+    <link rel="stylesheet" href="/css/contextual.css">
+    <link rel="stylesheet" href="/css/contextual.theme.css">
+    <link rel="stylesheet" href="/css/modal.css">
+    <script src="/appscripts/contextual_lwmod.js"></script>
+    <link defer rel="stylesheet" href="/css/main.css">
 
   </head>
 
   <body>
+
+    <!-- model dialog for loading from server -->
+    <button id="modal-btn" > click me, I make a modal</button>
+    <div class="modal" id="downloadModal">
+      <div class="modal-content">
+        <span class="close-btn" hidden>&times;</span> 
+        <p style="text-align:center">RESAMPLING</p>
+        <p style="text-align:center">Click to hide</p>
+      </div>
+    </div>
+
+
+
     <h2> Sound Set:  <%= ssname %> </h2>
     <!-- (_id: <%= sid %>)  -->
 
