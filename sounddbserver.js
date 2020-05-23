@@ -409,8 +409,8 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 				      	farray.forEach(function (item, index, arr){
 				      		arr[index] = {path : myPath + '/'+item, name: result.name+"_"+sr2shorthand(sr) + "/"+item}
 				      	});
-				      	//debug("Here is what we will zip " + JSON.stringify(farray));
-				     	res.zip(farray, result.name+"_pSoundSet"+".zip");
+			      		//debug("Here is what we will zip " + JSON.stringify(farray));
+				     	res.zip(farray, result.name+"_"+sr2shorthand(sr)+".zip");
 		    		})
 				}
 			})
