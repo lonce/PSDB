@@ -42,6 +42,8 @@ window.onclick = function(e){
   }
 }
 
+window.addEventListener('keydown',function(e){if(e.keyIdentifier=='U+000A'||e.keyIdentifier=='Enter'||e.keyCode==13){if(e.target.nodeName=='INPUT'&&e.target.type=='text'){e.preventDefault();return false;}}},true);
+
 document.getElementById("downloadModal").addEventListener("click", function(){
 	console.log("Got the click")
 	modal.style.display = "none"

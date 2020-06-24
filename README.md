@@ -14,6 +14,7 @@ PSDB is a node/mongodb sound database system. It supports:
 
 ### Installation
 Install the dependencies and devDependencies and start the server.
+
 ```sh
 $ cd PSDB
 $ npm install 
@@ -38,7 +39,22 @@ I protect access to the admin view with a minimal firewall set up on Linux thus:
 $ sudo iptables -I INPUT -p tcp --dport 55555 -s [your privileged ip address] -j ACCEPT 
 $ sudo iptables -A INPUT -p tcp --dport 55555 -j DROP
 ```
+
+
+### To run in development:
+
+```
+$ node sounddbserver.js 55555 --dev &
+```
+
+This prevents the search for cert key files that live on the production server.
+
+
+
+##### Machine transfer:
+
 To transfer between machines once you have populated with some data, you have to move the 'uploads' and 'PSOUNDSETS' folders, and to transfer the databse itself, you can use:
+
 ```sh
 $ mongoexport --collection=pSoundSets --db=Parameterized-Sound-Sets --out=BK/pSoundSets.json
 ```
