@@ -349,7 +349,7 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
 					})
 					.catch(error => {
 						console.error(error);
-						res.send("had trouble copying param files to scratch destination for zipping");
+						res.send("had trouble copying param files from " + myPath + " to scratch destination for zipping");
 					});
 
 
